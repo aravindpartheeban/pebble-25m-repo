@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pebble-pipeline"
+version = "0.1.0"
+description = "Distillation, contrastive MRL training, and model souping pipeline for static token embeddings."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.4.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "pyarrow>=15.0.0",
+    "scikit-learn>=1.4.0",
+    "datasets>=2.20.0",
+    "tokenizers>=0.19.0",
+    "transformers>=4.44.0",
+    "sentence-transformers>=3.3.0",
+    "model2vec>=0.4.0",
+    "safetensors>=0.4.0",
+    "huggingface-hub>=0.25.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+pebble-featurize = "pebble_pipeline.cli:featurize_main"
+pebble-stage1 = "pebble_pipeline.cli:stage1_main"
+pebble-stage2 = "pebble_pipeline.cli:stage2_main"
+pebble-soup = "pebble_pipeline.cli:soup_main"
+pebble-eval = "pebble_pipeline.cli:eval_main"
+pebble-run = "pebble_pipeline.cli:pipeline_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,93 @@
+# Example pipeline configuration (matching the pebble-25m reference recipe).
+# Swap out teacher model, corpus, pair shards, hard-negative dataset, or soup weights as needed.
+
+seed: 42
+device: null # auto-detect cuda/cpu
+output_dir: ./outputs/pebble_run
+
+featurize:
+  enabled: false # Set true to run teacher featurization before Stage 1
+  model_id: MongoDB/voyage-4-nano
+  trust_remote_code: true
+  dim: 1024
+  max_seq_length: 512
+  dataset: ccde/fineweb-edu-sample-500K
+  dataset_split: train
+  text_column: text
+  output_dir: ./data/teacher_features
+  target_rows: 500000
+  rows_per_file: 100000
+  batch_size: 64
+  min_words: 25
+  max_words: 320
+
+stage1:
+  stage1_dir: ./data/teacher_features
+  vocab_size: 48000
+  min_frequency: 3
+  tokenizer_texts: 500000
+  lowercase: true
+  strip_accents: true
+  dim: 512
+  pca_fit_samples: 100000
+  epochs: 5
+  batch_size: 512
+  lr: 0.003
+  max_tokens: 512
+  token_dropout: 0.05
+  val_size: 4096
+  apply_sif: true
+  sif_a: 0.001
+
+stage2_branches:
+  # Branch 1: Cross-encoder KL distillation + hard-negative MRL InfoNCE
+  kl_branch:
+    ft_source: lightonai/embeddings-fine-tuning-filtered-en
+    ft_format: auto
+    stage2b_epochs: 2
+    stage2b_batch_size: 512
+    stage2b_lr: 0.05
+    max_split_rows: 100000
+    max_negs_to_load: 10
+    num_hard_negs: 5
+    kl_weight: 1.0
+    mrl_dims: [128, 256, 512]
+    temperature: 0.05
+    fn_margin: 0.05
+    token_dropout: 0.05
+    sampling_alpha: 0.5
+    blend_alpha: 0.8
+
+  # Branch 2: Multi-domain contrastive pretraining (Stage 2a) -> pure hard-neg MRL InfoNCE (Stage 2b)
+  infonce_branch:
+    pretrain_pairs_dir: ./data/pretrain_pairs # directory of query/document Parquet shards
+    stage2a_batch_size: 2048
+    stage2a_lr: 0.05
+    stage2a_max_steps: 2500
+    stage2a_max_subset_rows: 500000
+    ft_source: lightonai/embeddings-fine-tuning-filtered-en
+    ft_format: auto
+    stage2b_epochs: 2
+    stage2b_batch_size: 1024
+    stage2b_lr: 0.015
+    max_split_rows: 0 # uncapped
+    max_negs_to_load: 10
+    num_hard_negs: 5
+    kl_weight: 0.0
+    mrl_dims: [128, 256, 512]
+    temperature: 0.05
+    fn_margin: 0.05
+    token_dropout: 0.05
+    sampling_alpha: 0.5
+    blend_alpha: 0.8
+
+soup:
+  output_dir: ./outputs/pebble_run/soup_best
+  ref_key: s1
+  eval_nanobeir: false # Set true to score multiple recipes on NanoBEIR-en and pick best
+  recipes:
+    four_way_soup:
+      s1: 0.10
+      infonce_branch_s2a: 0.15
+      kl_branch_s2b: 0.25
+      infonce_branch_s2b: 0.50

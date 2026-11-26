@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.venv/
+venv/
+
+# Training artifacts, datasets & checkpoints
+data/
+outputs/
+*.parquet
+*.safetensors
+*.bin
+*.pt
+*.tsv
+run_config.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
