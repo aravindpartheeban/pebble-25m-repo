@@ -39,3 +39,6 @@ pebble-run = "pebble_pipeline.cli:pipeline_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
